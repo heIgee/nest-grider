@@ -14,7 +14,6 @@ export class AuthService {
   }
 
   async findOne(id: number): Promise<User | null> {
-    console.log(await this.userRepo.findOneBy({ id }));
     return await this.userRepo.findOneBy({ id });
   }
 
