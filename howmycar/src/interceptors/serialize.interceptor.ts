@@ -9,14 +9,16 @@ import { map, Observable } from 'rxjs';
 
 const interceptorMap = new Map<Function, SerializeInterceptor<unknown>>();
 
-export function Serialize<T extends object>(dto: ClassConstructor<T>) {
+export function Serialize<T extends object>(
+  dto: ClassConstructor<T>,
+): MethodDecorator & ClassDecorator {
   if (!interceptorMap.has(dto)) {
     interceptorMap.set(dto, new SerializeInterceptor(dto));
   }
   return UseInterceptors(interceptorMap.get(dto)!);
 }
 
-export class SerializeInterceptor<T> implements NestInterceptor {
+class SerializeInterceptor<T> implements NestInterceptor {
   constructor(private readonly dto: ClassConstructor<T>) {}
 
   intercept(

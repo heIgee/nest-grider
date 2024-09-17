@@ -1,36 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { User } from './user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto } from './dtos/create-user.dto';
+import { scrypt as scryptCb, randomBytes } from 'crypto';
+import { promisify } from 'util';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
+import { SignDto } from './dtos/sign.dto';
+import { User } from 'src/users/user.entity';
+
+const scrypt = promisify<string, string, number, Buffer>(scryptCb);
+const HASH_LENGTH = 32;
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectRepository(User) private userRepo: Repository<User>) {}
+  constructor(private usersService: UsersService) {}
 
-  create(newUser: CreateUserDto): Promise<User> {
-    const user = this.userRepo.create(newUser);
-    return this.userRepo.save(user);
+  async signup({ email, password }: SignDto): Promise<User> {
+    const usersWithEmail = await this.usersService.find(email);
+
+    if (usersWithEmail.length > 0) {
+      throw new ConflictException(
+        `User with email: ${email} is already registered.`,
+      );
+    }
+
+    const salt = randomBytes(8).toString('hex');
+    const hash = await scrypt(password, salt, HASH_LENGTH);
+    const finalPwd = `${salt}.${hash.toString('hex')}`;
+
+    return await this.usersService.create({ email, password: finalPwd });
   }
 
-  async findOne(id: number): Promise<User | null> {
-    return await this.userRepo.findOneBy({ id });
-  }
+  async signin({ email, password }: SignDto): Promise<User> {
+    const usersWithEmail = await this.usersService.find(email);
 
-  find(email: string): Promise<User[]> {
-    return this.userRepo.findBy({ email });
-  }
+    if (usersWithEmail.length < 1) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
 
-  async update(id: number, attrs: Partial<User>): Promise<User> {
-    const user = await this.findOne(id);
-    if (!user) throw new NotFoundException(`User with id: ${id} is not found.`);
-    Object.assign(user, attrs);
-    return this.userRepo.save(user);
-  }
+    const [user] = usersWithEmail;
+    const [salt, storedHashStr] = user.password.split('.');
+    const hash = await scrypt(password, salt, HASH_LENGTH);
 
-  async remove(id: number): Promise<User> {
-    const user = await this.findOne(id);
-    if (!user) throw new NotFoundException(`User with id: ${id} is not found.`);
-    return this.userRepo.remove(user);
+    if (hash.toString('hex') !== storedHashStr) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    return user;
   }
 }

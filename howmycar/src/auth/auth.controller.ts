@@ -1,53 +1,49 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
-  NotFoundException,
-  Param,
-  ParseIntPipe,
-  Patch,
+  HttpCode,
   Post,
-  Query,
+  Session,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dtos/create-user.dto';
-import { UpdateUserDto } from './dtos/update-user.dto';
 import { AuthService } from './auth.service';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
-import { UserDto } from './dtos/user.dto';
+import { UserDto } from 'src/users/dtos/user.dto';
+import { SignDto } from './dtos/sign.dto';
+import { CurrentUser } from 'src/users/decorators/current-user.decorator';
+import { User } from 'src/users/user.entity';
 
-@Controller('auth')
+@Controller('/auth')
 @Serialize(UserDto)
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('/signup')
-  createUser(@Body() body: CreateUserDto) {
-    return this.authService.create(body);
-  }
-
-  @Get('/:id')
-  async findUser(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.authService.findOne(id);
-    if (!user) throw new NotFoundException(`User with id: ${id} is not found.`);
+  @Get('/whoami')
+  async checkStatus(@CurrentUser() user: User | null) {
+    if (!user) {
+      throw new UnauthorizedException('You are not authorized.');
+    }
     return user;
   }
 
-  @Get()
-  findAllUsers(@Query('email') email: string) {
-    return this.authService.find(email);
+  @Post('/signout')
+  @HttpCode(200)
+  async signout(@Session() session: any) {
+    session.userId = null;
   }
 
-  @Patch('/:id')
-  updateUser(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: UpdateUserDto,
-  ) {
-    return this.authService.update(id, body);
+  @Post('/signup')
+  async signup(@Body() body: SignDto, @Session() session: any) {
+    const user = await this.authService.signup(body);
+    session.userId = user.id;
+    return user;
   }
 
-  @Delete('/:id')
-  removeUser(@Param('id', ParseIntPipe) id: number) {
-    return this.authService.remove(id);
+  @Post('/signin')
+  async signin(@Body() body: SignDto, @Session() session: any) {
+    const user = await this.authService.signin(body);
+    session.userId = user.id;
+    return user;
   }
 }
