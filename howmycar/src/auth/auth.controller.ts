@@ -20,7 +20,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Get('/whoami')
-  async checkStatus(@CurrentUser() user: User | null) {
+  checkStatus(@CurrentUser() user: User | null) {
     if (!user) {
       throw new UnauthorizedException('You are not authorized.');
     }
@@ -29,7 +29,7 @@ export class AuthController {
 
   @Post('/signout')
   @HttpCode(200)
-  async signout(@Session() session: any) {
+  signout(@Session() session: any) {
     session.userId = null;
   }
 
@@ -41,6 +41,7 @@ export class AuthController {
   }
 
   @Post('/signin')
+  @HttpCode(200)
   async signin(@Body() body: SignDto, @Session() session: any) {
     const user = await this.authService.signin(body);
     session.userId = user.id;
