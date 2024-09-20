@@ -15,6 +15,7 @@ import { ReportsModule } from './reports/reports.module';
 import { Report } from './reports/report.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CurrentUserMiddleware } from './middleware/current-user.middleware';
 
 @Module({
   imports: [
@@ -55,5 +56,6 @@ export class AppModule implements NestModule {
         }),
       )
       .forRoutes('*');
+    consumer.apply(CurrentUserMiddleware).forRoutes('*');
   }
 }

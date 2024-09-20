@@ -11,11 +11,12 @@ import {
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dtos/create-report.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { CurrentUser } from 'src/users/decorators/current-user.decorator';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
 import { User } from 'src/users/user.entity';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { ReportDto } from './dtos/report.dto';
 import { ReportApprovalDto } from './dtos/report-approval.dto';
+import { AdminGuard } from 'src/guards/admin.guard';
 
 @Controller('/reports')
 @Serialize(ReportDto)
@@ -34,6 +35,7 @@ export class ReportsController {
   }
 
   @Patch('/:id')
+  @UseGuards(AdminGuard)
   changeReportApproval(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: ReportApprovalDto,

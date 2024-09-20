@@ -9,6 +9,9 @@ export class User {
   @OneToMany(() => Report, (report) => report.user)
   reports: Report[];
 
+  @Column({ default: true })
+  isAdmin: boolean;
+
   @Column()
   email: string;
 
