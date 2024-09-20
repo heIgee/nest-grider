@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { SignDto } from './dtos/sign.dto';
+import { User } from 'src/users/user.entity';
 
 describe(AuthController.name, () => {
   let authController: AuthController;
@@ -11,9 +12,9 @@ describe(AuthController.name, () => {
   beforeEach(async () => {
     fakeAuthService = {
       signup: ({ email, password }: SignDto) =>
-        Promise.resolve({ id: 1, email, password }),
+        Promise.resolve({ id: 1, email, password } as User),
       signin: ({ email, password }: SignDto) =>
-        Promise.resolve({ id: 1, email, password }),
+        Promise.resolve({ id: 1, email, password } as User),
     };
 
     const module = await Test.createTestingModule({

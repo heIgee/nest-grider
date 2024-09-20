@@ -19,8 +19,8 @@ describe(AuthService.name, () => {
           email: newUser.email,
           password: newUser.password,
         };
-        users.push(user);
-        return Promise.resolve(user);
+        users.push(user as User);
+        return Promise.resolve(user as User);
       },
       find: (email: string) =>
         Promise.resolve(users.filter((user) => user.email.includes(email))),

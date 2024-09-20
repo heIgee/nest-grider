@@ -31,7 +31,6 @@ export class UsersController {
 
   @Get()
   findAllUsers(@Query('email') email: string) {
-    console.log(email);
     return this.usersService.find(email);
   }
 
